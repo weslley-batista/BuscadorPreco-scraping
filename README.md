@@ -4,19 +4,23 @@ Um buscador de preços similar ao Google Shopping, desenvolvido em Next.js 14 co
 
 ## 🚀 Funcionalidades
 
-- **Busca Instantânea**: Busque produtos e veja preços em tempo real
-- **Comparação Multi-loja**: Amazon, Magazine Luiza e Casas Bahia
+- **Busca Real de Preços**: Scraping real das lojas online (Amazon, Magazine Luiza, Casas Bahia)
+- **Comparação Multi-loja**: Busca simultânea em múltiplas lojas
 - **Ordenação Inteligente**: Resultados ordenados por menor preço
 - **Filtros Avançados**: Por loja e faixa de preço
 - **Interface Responsiva**: Funciona perfeitamente em desktop e mobile
-- **Cache Inteligente**: Resultados em cache para melhor performance
+- **Cache Inteligente**: Resultados em cache para melhor performance (TTL: 5 minutos)
 - **Debounce Automático**: Busca otimizada com debounce de 500ms
-- **Tratamento de Erros**: Fallback gracioso para falhas de providers
+- **Tratamento de Erros Robusto**: Fallback gracioso - se uma loja falhar, as outras continuam funcionando
+- **Rate Limiting**: Delays automáticos entre requisições para evitar bloqueios
+- **Headers Realistas**: User-Agents rotacionados para simular navegador real
+- **Retry com Backoff**: Tentativas automáticas em caso de falha temporária
 
 ## 🛠️ Tecnologias Utilizadas
 
 - **Frontend**: Next.js 14 (App Router), React, TypeScript, Tailwind CSS
 - **Backend**: API Routes do Next.js
+- **Scraping**: Cheerio para parsing HTML, Fetch API com retry e timeout
 - **Ícones**: Lucide React
 - **Linting**: ESLint
 - **Build**: Turbopack
@@ -38,15 +42,17 @@ src/
 ├── hooks/                   # Hooks customizados
 │   ├── useSearch.ts         # Hook para busca
 │   └── useDebounce.ts       # Hook para debounce
-├── providers/               # Providers de dados (mockados)
-│   ├── amazon.ts            # Provider Amazon
-│   ├── magazine-luiza.ts    # Provider Magazine Luiza
-│   ├── casas-bahia.ts       # Provider Casas Bahia
+├── providers/               # Providers de dados (scraping real)
+│   ├── amazon.ts            # Provider Amazon (scraping)
+│   ├── magazine-luiza.ts    # Provider Magazine Luiza (API + scraping)
+│   ├── casas-bahia.ts       # Provider Casas Bahia (API + scraping)
 │   └── base.ts              # Provider base abstrato
 ├── services/                # Serviços da aplicação
 │   ├── search.ts            # Serviço de busca
 │   ├── normalizer.ts        # Normalização de dados
 │   └── cache.ts             # Cache em memória
+├── utils/                   # Utilitários
+│   └── scraping.ts          # Funções de scraping (headers, delays, rate limiting)
 └── types/                   # Definições TypeScript
     ├── index.ts             # Tipos principais
     └── providers.ts         # Tipos específicos de providers
@@ -94,11 +100,19 @@ src/
 
 ### Providers
 
-Cada provider simula uma loja real com dados mockados:
+Cada provider implementa scraping real das lojas:
 
-- **Amazon**: Usa campos como `price`, `asin`, `rating`
-- **Magazine Luiza**: Usa `value`, `productId`, `installment`
-- **Casas Bahia**: Usa `cost`, `sku`, `warranty`, `delivery`
+- **Amazon**: Scraping da página de resultados, extrai `price`, `asin`, `rating`, `prime`
+- **Magazine Luiza**: Tenta API interna primeiro, fallback para scraping, extrai `value`, `productId`, `installment`
+- **Casas Bahia**: Tenta API interna primeiro, fallback para scraping, extrai `cost`, `sku`, `warranty`, `delivery`
+
+**Características dos Providers**:
+- ✅ Múltiplos seletores CSS para maior robustez
+- ✅ Tratamento de erros individual (não quebra o sistema)
+- ✅ Timeout configurável por provider
+- ✅ Retry automático com backoff exponencial
+- ✅ Rate limiting por domínio
+- ✅ Headers realistas com User-Agent rotacionado
 
 ### Cache Strategy
 
@@ -172,22 +186,42 @@ Busca com corpo JSON (útil para filtros complexos).
 
 ## 🎯 Diferenciais Implementados
 
-- ✅ **Cache em memória** com TTL configurável
+- ✅ **Scraping Real**: Busca preços reais das lojas online
+- ✅ **Cache em memória** com TTL configurável (5 minutos)
 - ✅ **Indicador de "melhor oferta"** com destaque visual
 - ✅ **Debounce na busca** (500ms) para melhor UX
-- ✅ **Tratamento de erro** por provider (fallback gracioso)
+- ✅ **Tratamento de erro robusto** por provider (fallback gracioso)
 - ✅ **AbortController** para cancelar buscas antigas
-- ✅ **Arquitetura preparada** para scraping/APIs reais
+- ✅ **Rate Limiting**: Delays automáticos entre requisições
+- ✅ **Retry com Backoff**: Tentativas automáticas em caso de falha
+- ✅ **Headers Realistas**: User-Agents rotacionados
+- ✅ **Normalização de Preços**: Suporta formatos brasileiros (R$ 1.234,56)
+- ✅ **Execução Paralela**: Busca simultânea em todas as lojas
+- ✅ **Timeout Individual**: Cada provider tem seu próprio timeout
+
+## ⚙️ Configuração
+
+Veja o arquivo `CONFIG.md` para detalhes sobre variáveis de ambiente e configurações avançadas.
+
+Principais configurações disponíveis:
+- Timeouts por provider
+- Número de retries
+- Delays entre requisições
+- TTL do cache
+- Nível de logs
 
 ## 🔮 Expansão Futura
 
-- Integração com APIs reais das lojas
-- Implementação de scraping com Puppeteer/Playwright
-- Banco de dados para histórico de preços
-- Notificações de queda de preço
-- Autenticação de usuários
-- Favoritos e listas de desejos
-- Comparação histórica de preços
+- ✅ ~~Integração com APIs reais das lojas~~ (Implementado)
+- ✅ ~~Implementação de scraping~~ (Implementado)
+- 🔄 Integração com Mercado Livre
+- 🔄 Banco de dados para histórico de preços
+- 🔄 Notificações de queda de preço
+- 🔄 Autenticação de usuários
+- 🔄 Favoritos e listas de desejos
+- 🔄 Comparação histórica de preços
+- 🔄 Suporte a proxies/rotating IPs
+- 🔄 Playwright para sites com JavaScript pesado
 
 ## 📝 Licença
 
