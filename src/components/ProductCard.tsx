@@ -93,10 +93,12 @@ export function ProductCard({ product, isBestDeal = false, priceDifference }: Pr
         )}
       </div>
 
-      <div className="flex items-center text-sm text-gray-500 mb-4">
-        <Clock className="h-4 w-4 mr-1" />
-        Atualizado: {formatDate(product.lastUpdated)}
-      </div>
+      {product.lastUpdated && (
+        <div className="flex items-center text-sm text-gray-500 mb-4">
+          <Clock className="h-4 w-4 mr-1" />
+          Atualizado: {formatDate(product.lastUpdated)}
+        </div>
+      )}
 
       <a
         href={product.url}
